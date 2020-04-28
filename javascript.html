@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Bootstrap Example</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div>
+            <input style="width: 200px; margin: 20px auto;" type="text" class="form-control" id="search" name="search" onchange="lookup(this.value)">
+        </div>
+        <div>
+            <ul id="response">
+            </ul>
+        </div>
+    </div>
+    <script>
+        var data = {};
+        var flag1 = false;
+        var flag2 = false;
+        var flag3 = false;
+
+        function lookup(search_val) {
+            $('#response').empty();
+            data = {};
+            flag1 = false;
+            flag2 = false;
+            flag3 = false;
+            // console.log('lastName: ', search_val);
+
+            // https://itunes.apple.com
+            var my_awesome_script = document.createElement('script');
+            my_awesome_script.setAttribute('src','https://itunes.apple.com/search?term='+search_val+'&callback=dataReceivers');
+            document.head.appendChild(my_awesome_script);
+
+            // api.tvmaze.com
+            $.ajax({
+                url: 'http://api.tvmaze.com/search/shows?q='+search_val,
+                success: function(response) {
+                        // console.log(response);
+                        display(response, 'api.tvmaze.com');
+                    }
+                }
+            )
+            // api.worldbank.org
+            $.ajax({
+                url: 'http://api.worldbank.org/v2/country/'+search_val+'?format=json',
+                success: function(response) {
+                        // console.log(response);
+                        display(response, 'api.worldbank.org');
+                    }
+                }
+            )
+        }
+        
+        var dataReceivers = function(response) {
+                // console.log(response.results);
+                display(response, 'itunes.apple.com')
+        }
+
+        function display(response, url) {
+            if(url === 'api.tvmaze.com') {
+                for(var i=0; i<response.length; i++){
+                    // $('#response').append(
+                    //     '<li><a href="'+response[i].show.url+'">'+response[i].show.name+'</a> (api.tvmaze.com)</li>'
+                    // )
+                    data[response[i].show.name] = [url, response[i].show.url]
+                }
+                flag1 = true;
+            }
+            if(url === 'api.worldbank.org') {
+                // $('#response').append(
+                //     '<li><a href="#">'+response[1][0].name+'</a> (api.worldbank.org)</li>'
+                // )
+                if(response.length != 1){
+                    data[response[1][0].name] = [url, '#']
+                }
+                flag2 = true;
+            }
+            if(url === 'itunes.apple.com') {
+                for(var i=0; i<response.results.length; i++){
+                    // $('#response').append(
+                    //     '<li><a href="'+response.results[i].trackViewUrl+'">'+response.results[i].artistName+'</a> (itunes.apple.com)</li>'
+                    // )
+                    data[response.results[i].artistName] = [url, response.results[i].trackViewUrl]
+                }
+                flag3 = true;
+            }
+            if(flag1 && flag2 && flag3) {
+                var array = Object.keys(data);
+                array.sort();
+                for(var i=0; i<array.length; i++) {
+                    $('#response').append(
+                        '<li><a href="'+data[array[i]][1]+'">'+array[i]+'</a> ('+data[array[i]][0]+')</li>'
+                    )
+                }
+            }
+        }
+    </script>
+</body>
+</html>
